@@ -1,0 +1,57 @@
+MODULE main
+VAR
+	ferrymen:boolean;
+	goat:boolean;
+	wolf:boolean;
+	cabbage:boolean;
+	ship:{goat_man,wolf_man,cabbage_man,empty,man};
+	--ship 表示船上装着是什么
+ASSIGN
+	init(ferrymen):=FALSE;	--人在左边
+	init(goat):=FALSE;		--羊在左边
+	init(wolf):=FALSE;		--狼在左边
+	init(cabbage):=FALSE;	--白菜在左边
+	init(ship):=empty;		--船上为空
+							--初始化的时候,全部在河岸的左边FALSE
+ASSIGN
+	next(ship):=	
+		case
+			ferrymen=TRUE&ferrymen=goat & goat=wolf & goat=cabbage :empty;			--全部已经过河,不再运输
+			ferrymen=FALSE & goat=FALSE & wolf=FALSE & cabbage=FALSE : {goat_man};	--表示状态1的转移关系
+			ferrymen=TRUE&goat=TRUE & cabbage=FALSE & wolf=FALSE :{goat_man,man};	--表示状态2的转移关系
+			ferrymen=FALSE & cabbage=FALSE&wolf=FALSE&goat=TRUE : {man,wolf_man};	--表示状态3的转移关系
+			ferrymen=TRUE & cabbage=FALSE & wolf=TRUE&goat=TRUE : {goat_man,wolf_man};	--表示状态4的转移关系
+			ferrymen=FALSE & cabbage=FALSE & wolf=TRUE&goat=FALSE : {goat_man,cabbage_man};	--表示状态5的转移关系
+			ferrymen=TRUE & cabbage=TRUE & wolf=TRUE&goat=FALSE : {man,cabbage_man};	--状态6的转移关系
+			ferrymen=FALSE & cabbage=TRUE & wolf=TRUE&goat=FALSE : {goat_man,man};	--状态7的转移关系
+			TRUE: empty;
+		esac;
+TRANS
+
+		case
+			ship=goat_man& ferrymen=goat:		next(goat)=!goat;		--如果运输的是人和羊,那么人和羊都换到另外一边
+			 TRUE	: goat;
+		esac;
+TRANS
+		case
+			(ship=wolf_man) & ferrymen=wolf:		next(wolf)=!wolf;		--如果运输的是人和狼,那么人和狼都换到另外一边
+			TRUE	:wolf;
+		esac;
+TRANS
+		case
+			(ship=cabbage_man)& ferrymen=cabbage:		next(cabbage)=!cabbage;	--如果运输的人和白菜,那么人和白菜都转移
+			TRUE:	cabbage;
+		esac;
+TRANS
+		case
+			(ship=empty): 	next(ferrymen)=	ferrymen;
+			TRUE:	next(ferrymen)=	!ferrymen	;											--每次都需要人的陪同
+		esac;
+--每次都要人陪同
+
+
+SPEC
+	!EF ((cabbage=TRUE)& (goat=TRUE) & (wolf=TRUE) &(ferrymen=TRUE))
+CTLSPEC
+	E [(	((goat=wolf)-> (goat=ferrymen)) & ((goat=cabbage)->(goat=ferrymen)))
+		U ((cabbage=TRUE)& (goat=TRUE) & (wolf=TRUE) &(ferrymen=TRUE))]
